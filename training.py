@@ -197,6 +197,14 @@ def try_net(data_val, params):
     saver.save(sess, params['model_path'])
 
     # TRAINING
+
+    # Make a training data set with all of the files FIRST
+    train_prefix = './data/{}_train'.format(params['data_name'])
+    train_filepaths = [train_prefix + '{}_x.npy'.format(file_num) 
+        for file_num in range(params['data_train_len'])]
+    data_train = tf.data.Dataset.list_files(train_filepaths)
+    # Then use this with data_train.prefetch(1)? or data_train.batch(batchsize).prefetch(1)?
+
     # loop over training data files
     for f in xrange(params['data_train_len'] * params['num_passes_per_file']):
         if finished:
