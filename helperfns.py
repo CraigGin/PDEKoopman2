@@ -14,7 +14,7 @@ def stack_data(data, num_shifts, len_time):
     else:
         data = (np.asmatrix(data)).getT()
         n = 1
-    num_traj = data.shape[0] / len_time
+    num_traj = data.shape[0] // len_time
 
     new_len_time = len_time - num_shifts
 
