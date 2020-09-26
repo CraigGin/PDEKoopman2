@@ -19,6 +19,7 @@ class rel_mse(keras.losses.Loss):
         super().__init__(**kwargs)
 
     def call(self, y_true, y_pred):
+        
         # Compute the MSE and the L2 norm of the true values (with 1/batch_size prefactor)
         mse = tf.reduce_mean(tf.square(y_pred-y_true), axis=-1)
         true_norm = tf.reduce_mean(tf.square(y_true), axis=-1)
@@ -27,8 +28,8 @@ class rel_mse(keras.losses.Loss):
 
         # Compute normalized MSE (normalized to true L2 norm)
         err = tf.truediv(mse, true_norm)
-        err = tf.reshape(err, [-1])
-        #err = tf.reduce_mean(err, axis=-1)
+        #err = tf.reshape(err, [-1])
+        err = tf.reduce_mean(err, axis=-1)
 
         # Return the error
         return err

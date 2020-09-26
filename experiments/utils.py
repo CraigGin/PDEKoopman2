@@ -11,7 +11,7 @@ from tensorflow.keras.layers import Layer
 
 # Add the architecture path for the GreenNet and NMSE
 sys.path.append("../architecture/")
-from networkarch import networkarch, stack_predictions
+from networkarch import networkarch
 from rel_mse import rel_mse
 
 
@@ -32,11 +32,11 @@ def get_data(data_file_prefix: str, data_train_len, num_shifts):
 		data_val = np.load("{}_val_x.npy".format(data_file_prefix))
 
 		# Step 2. Organize the data for different training steps
-		train_zeros = np.zeros(data_train.shape)
-		val_zeros = np.zeros(data_val.shape)
-
 		train_pred = stack_predictions(data_train, num_shifts)
 		val_pred = stack_predictions(data_val, num_shifts)
+
+		train_zeros = np.zeros(train_pred.shape)
+		val_zeros = np.zeros(val_pred.shape)
 
 		return data_train, data_val, train_zeros, val_zeros, train_pred, val_pred
 
@@ -73,26 +73,26 @@ def evaluate_initial_models(save_prefix, all_data,
 
 				# Create a model, initially only to train autoencoders!
 				model = construct_network(train_autoencoder_only=True, 
-																	inner_loss_weights=inner_loss_weights, 
-																	**network_config)
+										  inner_loss_weights=inner_loss_weights, 
+										  **network_config)
 
 				# Compile the model
 				model.compile(loss=3*[loss_fn], 
-											optimizer=opt(lr=lr, **optimizer_opts), 
-											loss_weights=outer_loss_weights)
+							  optimizer=opt(lr=lr, **optimizer_opts), 
+							  loss_weights=outer_loss_weights)
 
 				# Set up the Callback function
 				checkpoint_path_aec = save_prefix + 'checkpoint_aec_{}'.format(i)
 				cbs_aec = [keras.callbacks.ModelCheckpoint(checkpoint_path_aec,
-																									 save_weights_only=True,
-																									 monitor='val_loss',
-																									 save_best_only=True)]
+														   save_weights_only=True,
+														   monitor='val_loss',
+														   save_best_only=True)]
 
 				#  Fit autoencoder-only model
 				aec_hist = model.fit(x=data_train, y=[data_train, data_train, train_zeros],
-														 validation_data=[data_val, (data_val, data_val, val_zeros)],
-														 callbacks=cbs_aec, batch_size=batch_size,
-														 epochs=aec_only_epochs, verbose=2)
+									 validation_data=(data_val, [data_val, data_val, val_zeros]),
+									 callbacks=cbs_aec, batch_size=batch_size,
+									 epochs=aec_only_epochs, verbose=True)
 
 				# Re-load weights with best validation loss
 				model.load_weights(checkpoint_path_aec)
@@ -102,29 +102,29 @@ def evaluate_initial_models(save_prefix, all_data,
 
 				# Re-compile the model
 				model.compile(loss=3*[loss_fn], 
-											optimizer=opt(lr=lr, **optimizer_opts), 
-											loss_weights=outer_loss_weights)
+							  optimizer=opt(lr=lr, **optimizer_opts), 
+							  loss_weights=outer_loss_weights)
 
 				# Train full model
 				checkpoint_path_full = save_prefix + 'checkpoint_{}'.format(i)
 				cbs = [keras.callbacks.ModelCheckpoint(checkpoint_path_full,
-																							 save_weights_only=True,
-																							 monitor='val_loss',
-																							 save_best_only=True)]
+													   save_weights_only=True,
+													   monitor='val_loss',
+													   save_best_only=True)]
 
 				# Fit the full model
 				full_hist = model.fit(x=data_train, y=[data_train, data_train, train_pred],
-															validation_data=[data_val, (data_val, data_val, val_pred)],
-															callbacks=cbs, batch_size=batch_size,
-															epochs=init_full_epochs)
+									  validation_data=(data_val, [data_val, data_val, val_pred]),
+									  callbacks=cbs, batch_size=batch_size,
+									  epochs=init_full_epochs)
 
 				# Load weights with best validation loss
 				model.load_weights(checkpoint_path_full)
 
 				# Evaluate model at checkpoint
 				best_loss = model.evaluate(x=data_val, 
-																	 y=[data_val, data_val, val_pred], 
-																	 verbose=False)
+										   y=[data_val, data_val, val_pred], 
+										   verbose=False)
 
 				# Save the model
 				model_path = save_prefix + "model_{}".format(i)
@@ -150,9 +150,9 @@ def evaluate_initial_models(save_prefix, all_data,
 
 
 def train_final_model(model_path: str, save_prefix: str,
-											all_data,
-											train_opts: dict,
-											custom_objects: dict = {}):
+					  all_data,
+					  train_opts: dict,
+					  custom_objects: dict = {}):
 		# Gather the relevant training options
 		best_model_epochs = train_opts['best_model_epochs']
 		batch_size = train_opts['batch_size']
@@ -162,22 +162,22 @@ def train_final_model(model_path: str, save_prefix: str,
 
 		# Load the model
 		model = tf.keras.models.load_model(model_path,
-																			 custom_objects=custom_objects)
+										   custom_objects=custom_objects)
 
 		# set the place to save the checkpoint model weights
 		checkpoint_model_path = save_prefix + 'checkpoint_final'
 
 		# Define the callback function for training
 		cbs = [keras.callbacks.ModelCheckpoint(checkpoint_model_path,
-																					 save_weights_only=True,
-																					 monitor='val_loss',
-																					 save_best_only=True)]
+											   save_weights_only=True,
+											   monitor='val_loss',
+											   save_best_only=True)]
 
 		# Train the best model
 		hist = model.fit(x=data_train, y=[data_train, data_train, train_pred],
-										 validation_data=[data_val, (data_val, data_val, val_pred)],
-										 callbacks=cbs, batch_size=batch_size,
-										 epochs=best_model_epochs)
+						 validation_data=(data_val, [data_val, data_val, val_pred]),
+						 callbacks=cbs, batch_size=batch_size,
+						 epochs=best_model_epochs)
 
 		# Load the best model weights
 		model.load_weights(checkpoint_model_path)
@@ -189,11 +189,11 @@ def train_final_model(model_path: str, save_prefix: str,
 		return hist.history, model_path
 
 def save_results(results_path: str, random_seed: int,
-								 model_path: str, custom_objects: dict,
-								 final_hist: dict, init_hist: dict):
+				 model_path: str, custom_objects: dict,
+				 final_hist: dict, init_hist: dict):
 		# Load the model
 		model = tf.keras.models.load_model(model_path,
-																			 custom_objects=custom_objects)
+										   custom_objects=custom_objects)
 		model.save(results_path + 'final_model')
 		print("Best model saved to:", model_path)
 
@@ -212,25 +212,35 @@ def save_results(results_path: str, random_seed: int,
 def check_for_directories(expt_name: str):
 		pardir = os.path.abspath(os.pardir)
 		dirs = ['logs',
-						'model_weights',
-						'model_weights' + os.sep + expt_name,
-						'results',
-						'results' + os.sep + expt_name,
-						]
+				'model_weights',
+				'model_weights' + os.sep + expt_name,
+				'results',
+				'results' + os.sep + expt_name,
+				]
 		for dirname in dirs:
 				os.makedirs(pardir+os.sep+dirname, exist_ok=True)
 
+def stack_predictions(data, num_shifts):
+	len_pred = data.shape[1]-num_shifts
+	prediction_list = []
+	for j in range(num_shifts):
+		prediction_list.append(data[:,j+1:j+1+len_pred,:])
+	prediction_tensor = np.concatenate(prediction_list, axis=1)
+			
+	return prediction_tensor
+
 
 def run_experiment(random_seed, expt_name: str, data_file_prefix: str,
-									 training_options: dict, network_config: dict,
-									 custom_objects: dict = {"relative_mse": rel_mse}
-									 ):
+				   training_options: dict, network_config: dict,
+				   custom_objects: dict = {"rel_mse": rel_mse}):
 		# Assign a random number generator seed for learning rates
 		r.seed(random_seed)
 		check_for_directories(expt_name)
 
 		# Get the training data
-		all_data = get_data(data_file_prefix, training_options['data_train_len'], network_config['num_shifts'])
+		all_data = get_data(data_file_prefix, 
+							training_options['data_train_len'], 
+							network_config['num_shifts'])
 
 		# Set the prefix for where to save the results/checkpointed models
 		save_prefix = '../model_weights/{}/'.format(expt_name)
@@ -239,16 +249,16 @@ def run_experiment(random_seed, expt_name: str, data_file_prefix: str,
 		# Autoencoders-only, then full model
 		# This method returns the file path to the best model:
 		init_hist, model_path = evaluate_initial_models(save_prefix,
-																										all_data,
-																										training_options,
-																										network_config)
+														all_data,
+														training_options,
+														network_config)
 
 		# Step 2 -- Load the best model, and train for the full time
 		# Load the best model (note: assumes the use of NMSE loss function)
 		final_hist, model_path = train_final_model(model_path, save_prefix,
-																							 all_data,
-																							 training_options,
-																							 custom_objects)
+												   all_data,
+												   training_options,
+												   custom_objects)
 
 		# Step 3 -- Save the results
 		results_path = '../results/{}/'.format(expt_name)

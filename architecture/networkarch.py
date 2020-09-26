@@ -42,7 +42,7 @@ class networkarch(keras.Model):
 												kernel_initializer=identity_init,
 												**inner_config)
 
-		self.rel_mse = rel_mse(name='relative_mse')
+		self.rel_mse = rel_mse(name='rel_mse')
 		self.inner_loss_weights = inner_loss_weights
 		self.L_diag = L_diag
 		self.train_autoencoder_only = train_autoencoder_only
@@ -53,65 +53,78 @@ class networkarch(keras.Model):
 		len_lin = self.len_time-self.num_shifts_middle
 
 		# Create arrays for prediction and linearity
+		#pred_inputs = tf.slice(inputs, begin=[0, 0, 0], size=[-1, len_pred, -1])
 		pred_inputs = inputs[:,:len_pred,:]
+		#lin_inputs = tf.slice(inputs, begin=[0, 0, 0], size=[-1, len_lin, -1])
 		lin_inputs = inputs[:,:len_lin,:]
+
 		# "Exact" solutions for linearity loss
-		#lin_exact = stack_predictions(lin_inputs, self.num_shifts_middle)
+		pred_exact = stack_predictions(inputs, self.num_shifts)
+		lin_advanced = stack_predictions(inputs, self.num_shifts_middle)
 		
 		#  Reshape inputs as 2D arrays
-		auto_inputs, pred_inputs, lin_inputs = reshape_inputs((inputs, pred_inputs, lin_inputs))
+		auto_inputs, pred_inputs, lin_inputs, lin_advanced = reshape_inputs((inputs, pred_inputs, lin_inputs, lin_advanced))
 		
 		# Autoencoder
 		partially_encoded = self.outer_encoder(auto_inputs)
 		fully_encoded = self.inner_encoder(partially_encoded)
 		partially_decoded = self.inner_decoder(fully_encoded)
 		autoencoder_output = self.outer_decoder(partially_decoded)
+
+		autoencoder_output = tf.reshape(autoencoder_output,
+										[-1, self.len_time, self.n_inputs])
+		
 		# Outer Autoencoder
 		outer_auto_output = self.outer_decoder(partially_encoded)
+
+		outer_auto_output = tf.reshape(outer_auto_output,
+									   [-1, self.len_time, self.n_inputs])
+		
 		# Inner Autoencoder Loss
 		self.add_loss(self.inner_loss_weights[0]*self.rel_mse(partially_encoded, partially_decoded))
-		# Make a tensor of all zeros for predictions
-		predictions = tf.zeros([inputs.shape[0],
-								len_pred*self.num_shifts,
-								self.n_inputs])
+
 		# If training autoencoder only, output results
 		if self.train_autoencoder_only:
+			predictions = 0*pred_exact
 			return autoencoder_output, outer_auto_output, predictions
+		
 		# Set dynamics matrix L
 		if self.L_diag:
 			Lmat = tf.linalg.diag(tf.linalg.diag_part(self.L))
 		else:
 			Lmat = self.L
+		
 		# Prediction 
+		predictions_list = []
 		part_encoded_pred = self.outer_encoder(pred_inputs)
 		current_encoded = self.inner_encoder(part_encoded_pred)
 		for shift in range(self.num_shifts):
 			advanced_encoded = tf.matmul(current_encoded, Lmat)
 			adv_part_decoded = self.inner_decoder(advanced_encoded)
 			advanced_decoded = self.outer_decoder(adv_part_decoded)
-			predictions[:,shift*len_pred:(shift+1)*len_pred,:] = tf.reshape(advanced_decoded, 
-																			[inputs.shape[0], -1, self.n_inputs])
-			current_encoded = advanced_encoded
+			predictions_list.append(tf.reshape(advanced_decoded, 
+											   [-1, len_pred, self.n_inputs]))
+			current_encoded = tf.identity(advanced_encoded)
+		predictions = tf.concat(predictions_list, axis=1)
+
 		# Linearity 
-		lin_pred = tf.zeros([inputs.shape[0],
-							 len_lin*self.num_shifts_middle,
-							 self.n_latent])
+		linearity_list = []
 		part_encoded_lin = self.outer_encoder(lin_inputs)
 		current_encoded = self.inner_encoder(part_encoded_lin)
 		for shift in range(self.num_shifts_middle):
 			advanced_encoded = tf.matmul(current_encoded, Lmat)
-			lin_pred[:,shift*len_lin:(shift+1)*len_lin,:] = tf.reshape(advanced_encoded,
-																	   [inputs.shape[0], -1, self.n_latent])
-			current_encoded = advanced_encoded
-		
+			current_encoded = tf.identity(advanced_encoded)
+			linearity_list.append(tf.reshape(current_encoded,
+											[-1, len_lin, self.n_latent]))	
+		lin_pred = tf.concat(linearity_list, axis=1)
+
+		lin_part_encoded = self.outer_encoder(lin_advanced)
+		lin_exact = self.inner_encoder(lin_part_encoded)
+		lin_exact = tf.reshape(lin_exact, [-1, self.num_shifts_middle*len_lin, self.n_latent])
+
 		# Add Linearity loss
-		lin_exact = lin_pred
 		self.add_loss(self.inner_loss_weights[1]*self.rel_mse(lin_exact, lin_pred))
-		# Reshape the outputs as 3D arrays
-		autoencoder_output = tf.reshape(autoencoder_output,
-										auto_inputs.shape)
-		outer_auto_output = tf.reshape(outer_auto_output,
-									   auto_inputs.shape)
+		
 		return autoencoder_output, outer_auto_output, predictions
 
 def identity_init(shape, dtype=tf.float32):
@@ -137,9 +150,10 @@ def reshape_inputs(inputs):
 
 def stack_predictions(data, num_shifts):
 	len_pred = data.shape[1]-num_shifts
-	prediction_tensor = np.zeros([data.shape[0], len_pred*num_shifts, data.shape[-1]])
+	prediction_list = []
 	for j in range(num_shifts):
-		prediction_tensor[:,j*len_pred:(j+1)*len_pred,:] = data[:,j+1:j+1+len_pred,:]
+		prediction_list.append(data[:,j+1:j+1+len_pred,:])
+	prediction_tensor = tf.concat(prediction_list, axis=1)
 			
 	return prediction_tensor
 

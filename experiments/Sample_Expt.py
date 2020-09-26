@@ -22,7 +22,7 @@ n_latent = 21
 _, len_time, n_inputs = getdatasize(data_file_prefix)
 
 # Set other parameters
-data_train_len = 1 # Number of training data files
+data_train_len = 20 # Number of training data files
 L_diag = False # Whether the dynamics matrix is forced to be diagonal
 num_shifts = 50
 num_shifts_middle = 50
@@ -67,8 +67,8 @@ network_config = {'n_inputs': n_inputs,
                   'L_diag': L_diag}
 
 # Aggregate all the training options in one dictionary
-training_options = {'aec_only_epochs': 25, 
-                    'init_full_epochs': 300,
+training_options = {'aec_only_epochs': 75, 
+                    'init_full_epochs': 250,
                     'best_model_epochs': 2500,
                     'num_init_models': 20, 
                     'loss_fn': rel_mse(),
@@ -86,7 +86,7 @@ training_options = {'aec_only_epochs': 25,
 random_seed = r.randint(0, 10**(10))
 
 # Set the custom objects used in the model (for loading purposes)
-custom_objs = {"relative_mse": rel_mse}
+custom_objs = {"rel_mse": rel_mse}
 
 # And run the experiment!
 run_experiment(random_seed=random_seed,
