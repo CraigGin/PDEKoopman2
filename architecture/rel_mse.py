@@ -1,10 +1,10 @@
-#from tensorflow.keras.losses import LossFunctionWrapper
 from tensorflow import keras
 import tensorflow as tf
 
 
 class rel_mse(keras.losses.Loss):
-    """Computes normalized mean of squares of errors between labels and preds.
+    """Computes relative mean squared error between labels and preds.
+
     # Arguments
         reduction: (Optional) Type of loss reduction to apply to loss.
             Default value is `SUM_OVER_BATCH_SIZE`.
@@ -19,16 +19,15 @@ class rel_mse(keras.losses.Loss):
         super().__init__(**kwargs)
 
     def call(self, y_true, y_pred):
-        
-        # Compute the MSE and the L2 norm of the true values (with 1/batch_size prefactor)
-        mse = tf.reduce_mean(tf.square(y_pred-y_true), axis=-1)
+
+        # Compute the MSE and the L2 norm of the true values
+        mse = tf.reduce_mean(tf.square(y_pred - y_true), axis=-1)
         true_norm = tf.reduce_mean(tf.square(y_true), axis=-1)
         # Ensure there are no 'zero' values in the denominator before division
         true_norm += self.denom_nonzero
 
-        # Compute normalized MSE (normalized to true L2 norm)
+        # Compute relative MSE
         err = tf.truediv(mse, true_norm)
-        #err = tf.reshape(err, [-1])
         err = tf.reduce_mean(err, axis=-1)
 
         # Return the error

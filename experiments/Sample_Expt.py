@@ -11,7 +11,7 @@ from utils import run_experiment, getdatasize
 # Add the architecture path for the DenseResBlock and rel_mse
 sys.path.append("../architecture/")
 from DenseResBlock import DenseResBlock
-from rel_mse import rel_mse 
+from rel_mse import rel_mse
 
 # Example Experiment Script:
 expt_name = 'Burgers_Expt1'
@@ -22,18 +22,11 @@ n_latent = 21
 _, len_time, n_inputs = getdatasize(data_file_prefix)
 
 # Set other parameters
-data_train_len = 20 # Number of training data files
-L_diag = False # Whether the dynamics matrix is forced to be diagonal
+data_train_len = 20  # Number of training data files
+L_diag = False  # Whether the dynamics matrix is forced to be diagonal
 num_shifts = 50
 num_shifts_middle = 50
 loss_weights = [1, 1, 1, 1, 1]
-
-#option to add identity??? - they can create their own block
-#relative loss option???
-#auto_first optional???
-#numIC - necessary??? - can do it in getdatasize
-# Option for initializing inner encoder/decoder - can do with inner_config, but do I need to pass my function identity_init?
-
 
 # Set up encoder and decoder configuration dict(s)
 activation = relu
@@ -67,10 +60,10 @@ network_config = {'n_inputs': n_inputs,
                   'L_diag': L_diag}
 
 # Aggregate all the training options in one dictionary
-training_options = {'aec_only_epochs': 75, 
-                    'init_full_epochs': 250,
-                    'best_model_epochs': 2500,
-                    'num_init_models': 20, 
+training_options = {'aec_only_epochs': 3,
+                    'init_full_epochs': 15,
+                    'best_model_epochs': 500,
+                    'num_init_models': 20,
                     'loss_fn': rel_mse(),
                     'optimizer': keras.optimizers.Adam,
                     'optimizer_opts': {},
@@ -78,9 +71,9 @@ training_options = {'aec_only_epochs': 75,
                     'data_train_len': data_train_len,
                     'loss_weights': loss_weights}
 
-####################################################################
-### Launch the Experiment
-####################################################################
+#
+# Launch the Experiment
+#
 
 # Get a random number generator seed
 random_seed = r.randint(0, 10**(10))
