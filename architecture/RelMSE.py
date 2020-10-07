@@ -1,8 +1,9 @@
+"""Calculate relative mean squared error."""
 from tensorflow import keras
 import tensorflow as tf
 
 
-class rel_mse(keras.losses.Loss):
+class RelMSE(keras.losses.Loss):
     """Computes relative mean squared error between labels and preds.
 
     # Arguments
@@ -32,8 +33,3 @@ class rel_mse(keras.losses.Loss):
 
         # Return the error
         return err
-
-    def get_config(self):
-        base_config = super().get_config()
-        return {**base_config,
-                "denom_nonzero": self.denom_nonzero}

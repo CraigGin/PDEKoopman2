@@ -12,7 +12,7 @@ from tensorflow.keras.layers import Layer
 # Add the architecture path for the GreenNet and NMSE
 sys.path.append("../architecture/")
 from networkarch import networkarch
-from rel_mse import rel_mse
+from RelMSE import RelMSE
 
 
 def construct_network(**architecture_config):
@@ -229,7 +229,7 @@ def stack_predictions(data, num_shifts):
 
 def run_experiment(random_seed, expt_name: str, data_file_prefix: str,
                    training_options: dict, network_config: dict,
-                   custom_objects: dict = {"rel_mse": rel_mse}):
+                   custom_objects: dict = {"RelMSE": RelMSE}):
         # Assign a random number generator seed for learning rates
         r.seed(random_seed)
         check_for_directories(expt_name)

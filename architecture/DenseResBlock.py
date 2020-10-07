@@ -1,9 +1,9 @@
-import tensorflow as tf
+"""Creates a residual block with dense layers."""
 from tensorflow import keras
 
 
 class DenseResBlock(keras.layers.Layer):
-    """A residual block of dense layers."""
+    """Subclass the Keras Layer class."""
 
     def __init__(self,
                  n_inputs=128,
@@ -13,6 +13,21 @@ class DenseResBlock(keras.layers.Layer):
                  output_config=dict(activation=None,
                                     kernel_initializer='he_normal'),
                  **kwargs):
+        """
+        Create a residual block with dense layers.
+
+        Arguments:
+            n_inputs -- the number of inputs to the network
+                (spatial discretization of the PDE)
+            num_hidden -- the number of hidden layers. Each will have the
+                same width as the input layer
+            hidden_config -- Python dictionary with keyword arguments to
+                pass to the dense hidden layers
+            output_config -- Python dictionary with keyword arguments to
+                pass to the final dense (linear) layer
+            **kwargs -- additional keyword arguments. Can be used to name the
+                residual block.
+        """
         super().__init__(**kwargs)
 
         self.n_inputs = n_inputs
@@ -29,14 +44,8 @@ class DenseResBlock(keras.layers.Layer):
                                               **output_config))
 
     def call(self, inputs):
+        """Run given inputs through the residual block."""
         x = inputs
         for layer in self.layers:
             x = layer(x)
-        return inputs + x
-
-    def get_config(self):
-        base_config = super().get_config()
-        return {**base_config,
-                'n_inputs': self.n_inputs,
-                'num_hidden': self.num_hidden,
-                'layers': self.layers}
+        return inputs + x  # Add input to output

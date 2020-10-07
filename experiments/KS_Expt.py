@@ -8,10 +8,10 @@ from tensorflow.keras.activations import relu
 
 from utils import run_experiment, getdatasize
 
-# Add the architecture path for the DenseResBlock and rel_mse
+# Add the architecture path for the DenseResBlock and RelMSE
 sys.path.append("../architecture/")
 from DenseResBlock import DenseResBlock
-from rel_mse import rel_mse
+from RelMSE import RelMSE
 
 # Example Experiment Script:
 expt_name = 'KS_Expt'
@@ -64,7 +64,7 @@ training_options = {'aec_only_epochs': 3,
                     'init_full_epochs': 15,
                     'best_model_epochs': 300,
                     'num_init_models': 20,
-                    'loss_fn': rel_mse(),
+                    'loss_fn': RelMSE(),
                     'optimizer': keras.optimizers.Adam,
                     'optimizer_opts': {},
                     'batch_size': 32,
@@ -79,7 +79,7 @@ training_options = {'aec_only_epochs': 3,
 random_seed = r.randint(0, 10**(10))
 
 # Set the custom objects used in the model (for loading purposes)
-custom_objs = {"rel_mse": rel_mse}
+custom_objs = {"RelMSE": RelMSE}
 
 # And run the experiment!
 run_experiment(random_seed=random_seed,
