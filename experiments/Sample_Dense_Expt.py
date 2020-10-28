@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+"""Sample experiment file using dense layers for autoencoder."""
 import random as r
 import sys
 
@@ -13,20 +13,22 @@ sys.path.append("../architecture/")
 from DenseResBlock import DenseResBlock
 from RelMSE import RelMSE
 
-# Example Experiment Script:
-expt_name = 'Burgers_Expt1'
-data_file_prefix = '../data/Burgers_Eqn_exp28'
+# Experiment name for saving results
+expt_name = 'Burgers_Expt'
 
-# Set size of latent space, and retrieve the 'full' size of the data
+# Prefix of training/validation files - use relative path from this file
+data_file_prefix = '../data/Burgers_Eqn'
+
+# Set size of latent space, and retrieve the size of the data
 n_latent = 21
 _, len_time, n_inputs = getdatasize(data_file_prefix)
 
 # Set other parameters
 data_train_len = 20  # Number of training data files
-L_diag = False  # Whether the dynamics matrix is forced to be diagonal
-num_shifts = 50
-num_shifts_middle = 50
-loss_weights = [1, 1, 1, 1, 1]
+L_diag = True  # Whether the dynamics matrix is forced to be diagonal
+num_shifts = 50  # Number of time steps to include in prediction loss
+num_shifts_middle = 50  # Number of time steps to include in linearity loss
+loss_weights = [1, 1, 1, 1, 1]  # Weights of 5 loss functions
 
 # Set up encoder and decoder configuration dict(s)
 activation = relu
@@ -48,7 +50,7 @@ outer_config = {'n_inputs': n_inputs,
 
 inner_config = {'kernel_regularizer': regularizer}
 
-# Network configuration (this is how the AbstractArchitecture will be created)
+# Set up network configuration dict
 network_config = {'n_inputs': n_inputs,
                   'n_latent': n_latent,
                   'len_time': len_time,

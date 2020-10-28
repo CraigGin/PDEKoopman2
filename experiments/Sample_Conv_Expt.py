@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+"""Sample experiment file using convolutional layers for autoencoder."""
 import random as r
 import sys
 
@@ -8,54 +8,69 @@ from tensorflow.keras.activations import relu
 
 from utils import run_experiment, getdatasize
 
-# Add the architecture path for the DenseResBlock and RelMSE
+# Add the architecture path for the DenseResBlock and rel_mse
 sys.path.append("../architecture/")
-from DenseResBlock import DenseResBlock
+from ConvResBlock import ConvResBlock
 from RelMSE import RelMSE
 
-# Example Experiment Script:
+# Experiment name for saving results
 expt_name = 'KS_Expt'
+
+# Prefix of training/validation files - use relative path from this file
 data_file_prefix = '../data/KS_Eqn'
 
-# Set size of latent space, and retrieve the 'full' size of the data
+# Set size of latent space, and retrieve the size of the data
 n_latent = 21
 _, len_time, n_inputs = getdatasize(data_file_prefix)
 
 # Set other parameters
 data_train_len = 20  # Number of training data files
 L_diag = False  # Whether the dynamics matrix is forced to be diagonal
-num_shifts = 50
-num_shifts_middle = 50
-loss_weights = [1, 1, 1, 1, 1]
+num_shifts = 50  # Number of time steps to include in prediction loss
+num_shifts_middle = 50  # Number of time steps to include in linearity loss
+loss_weights = [1, 1, 1, 1, 1]  # Weights of 5 loss functions
 
 # Set up encoder and decoder configuration dict(s)
 activation = relu
 initializer = keras.initializers.VarianceScaling()
 regularizer = l1_l2(0, 1e-8)
 
-hidden_config = {'activation': activation,
-                 'kernel_initializer': initializer,
-                 'kernel_regularizer': regularizer}
+convlay_config = {'kernel_size': 4,
+                  'strides': 1,
+                  'padding': 'SAME',
+                  'activation': activation,
+                  'kernel_initializer': initializer,
+                  'kernel_regularizer': regularizer}
+
+poollay_config = {'pool_size': 2,
+                  'strides': 2,
+                  'padding': 'VALID'}
+
+dense_config = {'activation': activation,
+                'kernel_initializer': initializer,
+                'kernel_regularizer': regularizer}
 
 output_config = {'activation': None,
                  'kernel_initializer': initializer,
                  'kernel_regularizer': regularizer}
 
 outer_config = {'n_inputs': n_inputs,
-                'num_hidden': 4,
-                'hidden_config': hidden_config,
+                'num_filters': [8, 16, 32, 64],
+                'convlay_config': convlay_config,
+                'poollay_config': poollay_config,
+                'dense_config': dense_config,
                 'output_config': output_config}
 
 inner_config = {'kernel_regularizer': regularizer}
 
-# Network configuration (this is how the AbstractArchitecture will be created)
+# Set up network configuration dict
 network_config = {'n_inputs': n_inputs,
                   'n_latent': n_latent,
                   'len_time': len_time,
                   'num_shifts': num_shifts,
                   'num_shifts_middle': num_shifts_middle,
-                  'outer_encoder': DenseResBlock(**outer_config),
-                  'outer_decoder': DenseResBlock(**outer_config),
+                  'outer_encoder': ConvResBlock(**outer_config),
+                  'outer_decoder': ConvResBlock(**outer_config),
                   'inner_config': inner_config,
                   'L_diag': L_diag}
 
