@@ -1,16 +1,24 @@
+"""Python functions that solve PDEs."""
 import numpy as np
 
 
 def HeatEqn_FT(D, L, x, t, u_0):
-    # Solves the 1-D Heat equation using the Fourier Transform
-    # Periodic BC
-    # Inputs:
-    # D = diffusion coeff
-    # L = length of spatial domain
-    # x = spatial discretization
-    # t = time discretization
-    # u_0 = initial conditions
+    """
+    Solve the 1-D Heat equation using the Fourier Transform.
 
+    For periodic boundary conditions
+
+    Arguments:
+        inputs:
+        D -- diffusion coefficient
+        L -- length of spatial domain, the domain will be [-L/2, L/2)
+        x -- 1D numpy array with spatial discretization
+        t -- 1D numpy array with time discretization
+        u_0 -- 1D numpy array with initial condition
+        outputs:
+        U -- 2D numpy array with solution to Heat equation, shape is
+            (number of time steps, number of spatial points)
+    """
     n = x.size
     k = (2 * np.pi / L) * np.fft.fftfreq(n, d=1 / n)
     u_0t = np.fft.fft(u_0)
@@ -23,20 +31,28 @@ def HeatEqn_FT(D, L, x, t, u_0):
 
 
 def Burgers_Periodic(mu, eps, x, t_output, dt_factor, u_k):
-    # Solves the Burgers' equation:
-    # du/dt + eps*u*(du/dx) = mu*(d^2u/dx^2)
-    # Uses a second order FD method
-    # Periodic BC
-    # Inputs:
-    # mu = diffusion coeff/ viscosity
-    # eps = strength of advection
-    # x = spatial discretization
-    # t_output = time discretization for output
-    # dt_factor = divide the dt from the above time discretization when solving
-    # (i.e. refine the time step for numerical stability, but only output every
-    #  dt_factor steps)
-    # u_k = initial conditions
+    """Solve Burgers' equation.
 
+    Burgers' equation:
+        u_t + eps*u*u_x = mu*u_xx
+
+    Solve using a second order FD method
+    For periodic boundary conditions
+
+    Arguments:
+        inputs:
+        mu -- diffusion coeffient/ viscosity
+        eps -- strength of advection
+        x -- 1D numpy array with spatial discretization
+        t_output -- 1D numpy array with time discretization
+        dt_factor -- divide dt from the above time discretization when solving
+            (i.e. refine the time step for numerical stability,
+            but only output every dt_factor steps)
+        u_k -- 1D numpy array with initial condition
+        outputs:
+        U -- 2D numpy array with solution to Burgers' equation, shape is
+            (number of time steps, number of spatial points)
+    """
     n = x.size
     dx = x[1] - x[0]
     dt = (t_output[1] - t_output[0]) / dt_factor
@@ -61,15 +77,25 @@ def Burgers_Periodic(mu, eps, x, t_output, dt_factor, u_k):
 
 
 def KS_Periodic(x, tmax, ntime, u):
-    # Solves the Kuramoto-Sivashinsky equation:
-    # u_t = -u*u_x - u_xx - u_xxxx
-    # Periodic BC
-    # Inputs:
-    # x = spatial discretization
-    # tmax = end time for simulation
-    # ntime = number of time steps
-    # u = initial condition
+    """Solve the Kuramoto-Sivashinsky equation.
 
+    Kuramoto-Sivashinsky equation:
+        u_t = -u*u_x - u_xx - u_xxxx
+
+    Solve in Fourier space using ETDRK4 time-stepping
+        (See Kassam and Trefethen, 2005)
+    For periodic boundary conditions
+
+    Arguments:
+        inputs:
+        x -- 1D numpy array with spatial discretization
+        tmax -- end time for simulation
+        ntime -- number of time steps
+        u -- 1D numpy array with initial condition
+        outputs:
+        U -- 2D numpy array with solution to KS equation, shape is
+            (number of time steps, number of spatial points)
+    """
     N = x.size
     v = np.fft.fft(u)
 

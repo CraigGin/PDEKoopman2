@@ -1,18 +1,22 @@
+"""
+Create training/validation data for KS Equation.
+
+All data comes from solutions to Kuramoto-Sivashinsky equation.
+Training data:
+    Initial conditions:
+        120,000 ICs
+        White noise, Sines, Square waves
+    Solve from t = 0 to 6.25 in steps of 0.125
+    128 spatial points in [-4*pi,4*pi)
+Validation data:
+    Same structure as training data but with 20,000 ICs
+"""
+
 import numpy as np
-# Must install this package, see https://pythonhosted.org/pyDOE/index.html
+# Must install pyDOE package, see https://pythonhosted.org/pyDOE/index.html
 import pyDOE
 from scipy.stats import geom
 from PDEsolvers import KS_Periodic
-
-# Create data sets for Experiment 5
-# All data comes from solutions to Kuramoto-Sivashinsky equation.
-# Training data:
-#   Initial conditions:
-#       White noise, Sines, Square waves
-#   Solve from t = 0 to 6.25 in steps of 0.125
-#   128 spatial points in [-pi,pi)
-# Validation data:
-#    same structure as training data but with 20000
 
 np.random.seed(0)
 
@@ -103,6 +107,7 @@ for train_num in range(n_train):
     for k in range(n_IC):
         Data[k, :, :] = KS_Periodic(x, T, n_time, u_0[k, :])
 
+    # Save data file
     np.save('{}_{}'.format(data_prefix, data_set), Data, allow_pickle=False)
 
 
@@ -175,4 +180,5 @@ Data = np.zeros((n_IC, n_time, n), dtype=np.float32)
 for k in range(n_IC):
     Data[k, :, :] = KS_Periodic(x, T, n_time, u_0[k, :])
 
+# Save data file
 np.save('{}_{}'.format(data_prefix, data_set), Data, allow_pickle=False)

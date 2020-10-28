@@ -10,7 +10,7 @@ Testing data:
 """
 
 import numpy as np
-# Must install this package, see https://pythonhosted.org/pyDOE/index.html
+# Must install pyDOE package, see https://pythonhosted.org/pyDOE/index.html
 import pyDOE
 from scipy.stats import geom
 from PDEsolvers import KS_Periodic
