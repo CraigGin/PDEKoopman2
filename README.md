@@ -43,7 +43,7 @@ In the `experiments` directory, create an experiment file. Two examples have bee
 The following is a description of the parameters that must be specified in the experiment file:
 
 * expt_name - name for your experiment (sets the name of the subdirectories where results are stored)
-* data_file_prefix - the relative path and `dataname` for your data files. For example, if your data files are named `Burgers_Eqn_train1_x.npy`, ..., `Burgers_Eqn_train20_x.npy`, `Burgers_Eqn_val_x.npy`, then you should use `..data/Burgers_Eqn'.
+* data_file_prefix - the relative path and `dataname` for your data files. For example, if your data files are named `Burgers_Eqn_train1_x.npy`, ..., `Burgers_Eqn_train20_x.npy`, `Burgers_Eqn_val_x.npy`, then you should use `..data/Burgers_Eqn`.
 * training_options - a dictionary with keyword arguments for training options. The dictionary contains the following, some of which are defined as variables in the sample scripts prior to creating the training_options disctionary:
   * aec_only_epochs - the number of epochs to train each initial model with only the autoencoder losses
   * init_full_epochs - the number of epochs to train each initial model with all losses
@@ -56,31 +56,22 @@ The following is a description of the parameters that must be specified in the e
   * data_train_len - the number of training data files
   * loss_weights - a list of the relative weights given to each loss function (in the order they are listed in the paper).
 * network_config - a dictionary with keyword arguments for the neural network configuration. The dictionary contains the following, some of which are defined as variables in the sample scripts prior to creating the network_config disctionary: 
-  * n_inputs - 
-  * n_latent - 
-  * len_time - 
-  * num_shifts - 
-  * num_shifts_middle - 
-  * outer_encoder - 
-  * outer_decoder - 
-  * inner_config -  
-  * L_diag - 
-* custom_objs - 
-
-
-* n_latent - 
-* data_train_len - 
-* L_diag - 
-* num_shifts - 
-* num_shifts_middle - 
-* loss_weights - 
-* activation - 
-
-
-As an example, Burgers_Experiment_28rr.py will train 20 neural networks with randomly chosen learning rates and initializations each for 20 minutes. It will create a directory called Burgers_exp28rr and store the networks and losses. You can then run the file Burgers_Experiment28rr_restore.py to restore the network with the smallest validation loss and continue training the network until convergence.
-3b. Can add network architectures in architecture folder
+  * n_inputs - the number of inputs to the network. This is automatically calculated in the sample scripts by checking the size of the data arrays.
+  * n_latent - the dimension of the latent space (i.e. the rank of the reduced order model)
+  * len_time - the length of the trajectories in the data. This is automatically calculated in the sample scripts by checking the size of the data arrays.
+  * num_shifts - the number of time steps included in the prediction loss (this is not described in the paper - see #num_shifts-and-num_shifts_middle below for details). For the paper, this was always len_time - 1.
+  * num_shifts_middle - the number of time steps included in the linearity loss (this is not described in the paper - see #num_shifts-and-num_shifts_middle below for details). For the paper, this was always len_time - 1.
+  * outer_encoder - a Keras model for the outer encoder of the network. For the sample experiments, we subclassed the Keras Layer class (see `architecture/DenseResBlock.py` and `architecture/ConvResBlock.py`). If you want to use the same network architecture as the paper, you can use these subclassed models and set the parameters in the sample experiment (see details below in #Using-the-included-architectures-for-the-outer-encoder/decoder ). If you want to change the network architecture, you can create your own Keras model using the Sequential API, the Functional API, or by subclassing.
+  * outer_decoder - a Keras model for the outer decoder of the network. See outer_encoder above for more details.
+  * inner_config - a dictionary with keyword arguments for the inner encoder and inner decoder layer. This can include any arguments accepted by keras.layers.Dense except for the following which are hard-coded: units, name, activation, use_bias, and kernel_initializer.
+  * L_diag - a boolean that sets whether the dynamics matrix L is contrained to be diagonal (True) or allowed to be any square matrix (False)
+* custom_objs - a dictionary that sets custom objects for loading the models. In our case, this only needs to be the custom loss function RelMSE. If using a built-in Keras loss, this dictionary can be empty.
 
 #### num_shifts and num_shifts_middle
+
+Add a description here
+
+#### Using the included architectures for the outer encoder/decoder
 
 Add a description here
 
