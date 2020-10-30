@@ -73,7 +73,7 @@ class NetworkArch(keras.Model):
             kernel_initializer=identity_init,
             **inner_config)
 
-        # The dynamics matrix
+        # The dynamics matrix, initialized as identity
         self.L = tf.Variable(tf.eye(n_latent), trainable=True)
 
         # Create the inner decoder layer
