@@ -61,7 +61,7 @@ The following is a description of the parameters that must be specified in the e
   * len_time - the length of the trajectories in the data. This is automatically calculated in the sample scripts by checking the size of the data arrays.
   * num_shifts - the number of time steps included in the prediction loss (this is not described in the paper - see [num_shifts and num_shifts_middle](#num_shifts-and-num_shifts_middle) below for details). For the paper, this was always len_time - 1.
   * num_shifts_middle - the number of time steps included in the linearity loss (this is not described in the paper - see [num_shifts and num_shifts_middle](#num_shifts-and-num_shifts_middle) below for details). For the paper, this was always len_time - 1.
-  * outer_encoder - a Keras model for the outer encoder of the network. For the sample experiments, we subclassed the Keras Layer class (see `architecture/DenseResBlock.py` and `architecture/ConvResBlock.py`). If you want to use the same network architecture as the paper, you can use these subclassed models and set the parameters in the sample experiment (see details below in [Using the included architectures for the outer encoder/decoder](#Using-the-included-architectures-for-the-outer-encoder/decoder)). If you want to change the network architecture, you can create your own Keras model using the Sequential API, the Functional API, or by subclassing.
+  * outer_encoder - a Keras model for the outer encoder of the network. For the sample experiments, we subclassed the Keras Layer class (see `architecture/DenseResBlock.py` and `architecture/ConvResBlock.py`). If you want to use the same network architecture as the paper, you can use these subclassed models and set the parameters in the sample experiment (see details below in [Using the included architectures for the outer encoder/decoder](#Using-the-included-architectures-for-the-outer-encoderdecoder)). If you want to change the network architecture, you can create your own Keras model using the Sequential API, the Functional API, or by subclassing.
   * outer_decoder - a Keras model for the outer decoder of the network. See outer_encoder above for more details.
   * inner_config - a dictionary with keyword arguments for the inner encoder and inner decoder layer. This can include any arguments accepted by keras.layers.Dense except for the following which are hard-coded: units, name, activation, use_bias, and kernel_initializer.
   * L_diag - a boolean that sets whether the dynamics matrix L is contrained to be diagonal (True) or allowed to be any square matrix (False)
@@ -69,7 +69,23 @@ The following is a description of the parameters that must be specified in the e
 
 #### num_shifts and num_shifts_middle
 
-Add a description here
+The parameter num_shifts controls the number of time steps that the network predicts forward in time when calculating the prediction loss. In the paper, each trajectory contains 51 time steps (the initial condition and M=50 steps forward in time). We used num_shifts = 50. The only time in the trajectory that can be evaluated up to 50 steps forward in time (given the data) is the initial condition. Therefore, only the initial condition was used for prediction and we evaluated the prediction accuracy for 1 to 50 steps forward in time. This is given by the loss function (see Equation 2.18):
+
+![L4](https://latex.codecogs.com/svg.latex?L_4%20%3D%20%5Cfrac%7B1%7D%7BN%7D%20%5Csum_%7Bj%3D1%7D%5E%7BN%7D%20%5Cfrac%7B1%7D%7BM%7D%20%5Csum_%7Bp%3D1%7D%5E%7BM%7D%20%5Cfrac%7B%5Cleft%5ClVert%20%5Cmathbf%7Bu%7D%5Ej_p%20-%20%5Cvarphi_d%28%5Cmathbf%7BK%7D%5Ep%5Cvarphi_e%28%5Cmathbf%7Bu%7D%5Ej_0%29%20%5Cright%5CrVert_2%5E2%7D%7B%5Cleft%5ClVert%20%5Cmathbf%7Bu%7D%5Ej_p%20%5Cright%5CrVert_2%5E2%7D.)
+
+where M = 50.
+
+However, the code also gives the option to predict fewer time steps into the future. Suppose you choose num_shifts = 10. Then the first 41 time points (i.e. M-num_shifts+1) in each trajectory can be evaluated up to 10 steps forward in time from the data. So for each trajectory, the network would predict 1 to 10 time steps into the future for the first 41 time steps. The loss function in this case is:
+
+![numshifts10](https://latex.codecogs.com/gif.latex?L_4%20%3D%20%5Cfrac%7B1%7D%7BN%7D%20%5Csum_%7Bj%3D1%7D%5E%7BN%7D%20%5Cfrac%7B1%7D%7B10%7D%20%5Csum_%7Bp%3D1%7D%5E%7B10%7D%20%5Cfrac%7B1%7D%7B41%7D%20%5Csum_%7Bi%3D0%7D%5E%7B40%7D%20%5Cfrac%7B%5Cleft%5ClVert%20%5Cmathbf%7Bu%7D%5Ej_%7Bp&plus;i%7D%20-%20%5Cvarphi_d%28%5Cmathbf%7BK%7D%5Ep%5Cvarphi_e%28%5Cmathbf%7Bu%7D%5Ej_i%29%20%5Cright%5CrVert_2%5E2%7D%7B%5Cleft%5ClVert%20%5Cmathbf%7Bu%7D%5Ej_%7Bp&plus;i%7D%20%5Cright%5CrVert_2%5E2%7D.)
+
+More generally, if S = num_shifts, the prediction loss is
+
+![numshifts](https://latex.codecogs.com/gif.latex?L_4%20%3D%20%5Cfrac%7B1%7D%7BN%7D%20%5Csum_%7Bj%3D1%7D%5E%7BN%7D%20%5Cfrac%7B1%7D%7BS%7D%20%5Csum_%7Bp%3D1%7D%5E%7BS%7D%20%5Cfrac%7B1%7D%7BM-S&plus;1%7D%20%5Csum_%7Bi%3D0%7D%5E%7BM-S%7D%20%5Cfrac%7B%5Cleft%5ClVert%20%5Cmathbf%7Bu%7D%5Ej_%7Bp&plus;i%7D%20-%20%5Cvarphi_d%28%5Cmathbf%7BK%7D%5Ep%5Cvarphi_e%28%5Cmathbf%7Bu%7D%5Ej_i%29%20%5Cright%5CrVert_2%5E2%7D%7B%5Cleft%5ClVert%20%5Cmathbf%7Bu%7D%5Ej_%7Bp&plus;i%7D%20%5Cright%5CrVert_2%5E2%7D.)
+
+The parameter num_shifts_middle plays a similar role but for prediction in the latent space (i.e. for the linearity loss).
+
+The practical implications are that larger numbers for num_shifts and num_shifts_middle produce networks that can reliably predict further into the future. However, the network is more difficult to train and sometimes the network doesn't converge to anything useful. If you are getting bad results with large values for num_shifts and num_shifts_middle, you may want to consider pre-training with small values and then reloading the pre-trained network and training with larger values.
 
 #### Using the included architectures for the outer encoder/decoder
 
