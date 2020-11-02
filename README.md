@@ -43,8 +43,8 @@ In the `experiments` directory, create an experiment file. Two examples have bee
 The following is a description of the parameters that must be specified in the experiment file:
 
 * expt_name - name for your experiment (sets the name of the subdirectories where results are stored)
-* data_file_prefix - the relative path and `dataname` for your data files. For example, if your data files are named `Burgers_Eqn_train1_x.npy`, ..., `Burgers_Eqn_train20_x.npy`, `Burgers_Eqn_val_x.npy`, then you should use `..data/Burgers_Eqn`.
-* training_options - a dictionary with keyword arguments for training options. The dictionary contains the following, some of which are defined as variables in the sample scripts prior to creating the training_options disctionary:
+* data_file_prefix - the relative path and `dataname` for your data files. For example, if your data files are named `Burgers_Eqn_train1_x.npy`, ..., `Burgers_Eqn_train20_x.npy`, `Burgers_Eqn_val_x.npy`, then you should use `../data/Burgers_Eqn`.
+* training_options - a dictionary with keyword arguments for training options. The dictionary contains the following, some of which are defined as variables in the sample scripts prior to creating the training_options dictionary:
   * aec_only_epochs - the number of epochs to train each initial model with only the autoencoder losses
   * init_full_epochs - the number of epochs to train each initial model with all losses
   * best_model_epochs - the number of epochs to train the final model after the best initial model is chosen and loaded
@@ -55,7 +55,7 @@ The following is a description of the parameters that must be specified in the e
   * batch_size - the batch size used for training
   * data_train_len - the number of training data files
   * loss_weights - a list of the relative weights given to each loss function (in the order they are listed in the paper).
-* network_config - a dictionary with keyword arguments for the neural network configuration. The dictionary contains the following, some of which are defined as variables in the sample scripts prior to creating the network_config disctionary: 
+* network_config - a dictionary with keyword arguments for the neural network configuration. The dictionary contains the following, some of which are defined as variables in the sample scripts prior to creating the network_config dictionary: 
   * n_inputs - the number of inputs to the network. This is automatically calculated in the sample scripts by checking the size of the data arrays.
   * n_latent - the dimension of the latent space (i.e. the rank of the reduced order model)
   * len_time - the length of the trajectories in the data. This is automatically calculated in the sample scripts by checking the size of the data arrays.
@@ -96,7 +96,7 @@ If you would like to use a residual network with fully connected layers for the 
 * hidden_config - a dictionary with keyword arguments for the hidden layers. These arguments will be used by keras.layers.Dense and can include things like activation, kernel_initializer, and kernel_regularizer.
 * output_config - a dictionary with keyword arguments for the output layer of the residual block. These arguments will be used by keras.layers.Dense and can include things like activation, kernel_initializer, and kernel_regularizer It is recommended that this layer be linear (i.e. no activation function).
 
-If you would like to use a residual network with convolutional layers for the outer encoder/decoder (like we did for the KS equation in the paper), you can use the `ConvResBlock` class as demonstrated in `Sample_Conv_Expt.py`. The following are the parameters which can be specified for the `DenseResBlock` class:
+If you would like to use a residual network with convolutional layers for the outer encoder/decoder (like we did for the KS equation in the paper), you can use the `ConvResBlock` class as demonstrated in `Sample_Conv_Expt.py`. The following are the parameters which can be specified for the `ConvResBlock` class:
 
 * n_inputs - the number of inputs to the network. This is automatically calculated in the sample scripts by checking the size of the data arrays.
 * num_filters - a list with the number of filters for each convolutional layer. The length of the list determines the number of convolutional layers.
@@ -108,7 +108,7 @@ If you would like to use a residual network with convolutional layers for the ou
 
 ### 4. Process results
 
-Included is a Jupyter notebook `process_results.ipynb` which gives an example of how you might load the model to do prediction and view some of the results saved in the `results` directory. The `results` directory currently has results created by `Sample_Dense_Expt.py` and `Sample_Conv_Expt.py` for Burgers' equation and the KS equation, respectively. You can run this notebook (assuming you have the data in the `data` directory) as see results similar to the paper.
+Included is a Jupyter notebook `process_results.ipynb` which gives an example of how you might load the model to do prediction and view some of the results saved in the `results` directory. The `results` directory currently has results created by `Sample_Dense_Expt.py` and `Sample_Conv_Expt.py` for Burgers' equation and the KS equation, respectively. You can run this notebook (assuming you have the data in the `data` directory) to see results similar to the paper.
 
 ## Questions/Comments/Bugs
 
