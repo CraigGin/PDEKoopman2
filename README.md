@@ -69,13 +69,13 @@ The following is a description of the parameters that must be specified in the e
 
 #### num_shifts and num_shifts_middle
 
-The parameter num_shifts controls the number of time steps that the network predicts forward in time when calculating the prediction loss. In the paper, each trajectory contains 51 time steps (the initial condition and M=50 steps forward in time). We used num_shifts = 50. The only time in the trajectory that can be evaluated up to 50 steps forward in time (given the data) is the initial condition. Therefore, only the initial condition was used for prediction and we evaluated the prediction accuracy for 1 to 50 steps forward in time. This is given by the loss function (see Equation 2.18):
+The parameter num_shifts controls the number of time steps that the network predicts forward in time when calculating the prediction loss. In the paper, each trajectory contains 51 time steps (the initial condition and M = 50 steps forward in time). We used num_shifts = 50. Because the data contains 51 time steps, only the initial condition has labels for the prediction 50 steps forward in time. Therefore, only the initial condition was used for prediction and we evaluated the prediction accuracy for 1 to 50 steps forward in time. This is given by the loss function (see Equation 2.18):
 
 ![L4](https://latex.codecogs.com/svg.latex?L_4%20%3D%20%5Cfrac%7B1%7D%7BN%7D%20%5Csum_%7Bj%3D1%7D%5E%7BN%7D%20%5Cfrac%7B1%7D%7BM%7D%20%5Csum_%7Bp%3D1%7D%5E%7BM%7D%20%5Cfrac%7B%5Cleft%5ClVert%20%5Cmathbf%7Bu%7D%5Ej_p%20-%20%5Cvarphi_d%28%5Cmathbf%7BK%7D%5Ep%5Cvarphi_e%28%5Cmathbf%7Bu%7D%5Ej_0%29%20%5Cright%5CrVert_2%5E2%7D%7B%5Cleft%5ClVert%20%5Cmathbf%7Bu%7D%5Ej_p%20%5Cright%5CrVert_2%5E2%7D.)
 
 where M = 50.
 
-However, the code also gives the option to predict fewer time steps into the future. Suppose you choose num_shifts = 10. Then the first 41 time points (i.e. M-num_shifts+1) in each trajectory can be evaluated up to 10 steps forward in time from the data. So for each trajectory, the network would predict 1 to 10 time steps into the future for the first 41 time steps. The loss function in this case is:
+However, the code also gives the option to predict fewer time steps into the future. Suppose you choose num_shifts = 10. Then the first 41 time points (i.e. M-num_shifts+1) in each trajectory have labels up to 10 steps forward in time in the data. So for each trajectory, the network would predict 1 to 10 time steps into the future for the first 41 time steps. The loss function in this case is:
 
 ![numshifts10](https://latex.codecogs.com/gif.latex?L_4%20%3D%20%5Cfrac%7B1%7D%7BN%7D%20%5Csum_%7Bj%3D1%7D%5E%7BN%7D%20%5Cfrac%7B1%7D%7B10%7D%20%5Csum_%7Bp%3D1%7D%5E%7B10%7D%20%5Cfrac%7B1%7D%7B41%7D%20%5Csum_%7Bi%3D0%7D%5E%7B40%7D%20%5Cfrac%7B%5Cleft%5ClVert%20%5Cmathbf%7Bu%7D%5Ej_%7Bp&plus;i%7D%20-%20%5Cvarphi_d%28%5Cmathbf%7BK%7D%5Ep%5Cvarphi_e%28%5Cmathbf%7Bu%7D%5Ej_i%29%20%5Cright%5CrVert_2%5E2%7D%7B%5Cleft%5ClVert%20%5Cmathbf%7Bu%7D%5Ej_%7Bp&plus;i%7D%20%5Cright%5CrVert_2%5E2%7D.)
 
@@ -89,11 +89,26 @@ The practical implications are that larger numbers for num_shifts and num_shifts
 
 #### Using the included architectures for the outer encoder/decoder
 
-Add a description here
+If you would like to use a residual network with fully connected layers for the outer encoder/decoder (like we did for Burgers' equation in the paper), you can use the `DenseResBlock` class as demonstrated in `Sample_Dense_Expt.py`. The following are the parameters which can be specified for the `DenseResBlock` class:
+
+* n_inputs - the number of inputs to the network. This is automatically calculated in the sample scripts by checking the size of the data arrays.
+* num_hidden - the number of hidden layers in the dense residual block
+* hidden_config - a dictionary with keyword arguments for the hidden layers. These arguments will be used by keras.layers.Dense and can include things like activation, kernel_initializer, and kernel_regularizer.
+* output_config - a dictionary with keyword arguments for the output layer of the residual block. These arguments will be used by keras.layers.Dense and can include things like activation, kernel_initializer, and kernel_regularizer It is recommended that this layer be linear (i.e. no activation function).
+
+If you would like to use a residual network with convolutional layers for the outer encoder/decoder (like we did for the KS equation in the paper), you can use the `ConvResBlock` class as demonstrated in `Sample_Conv_Expt.py`. The following are the parameters which can be specified for the `DenseResBlock` class:
+
+* n_inputs - the number of inputs to the network. This is automatically calculated in the sample scripts by checking the size of the data arrays.
+* num_filters - a list with the number of filters for each convolutional layer. The length of the list determines the number of convolutional layers.
+* convlay_config - a dictionary with keyword arguments for the convolutional layers. These arguments will be used by keras.layers.Conv1D and should include things like kernel_size, strides, padding, activation, kernel_initializer, and kernel_regularizer.
+* poollay_config - a dictionary with keyword arguments for the pooling layers. These arguments will be used by keras.layers.AveragePooling1D and can include things like pool_size, strides, and padding.
+* dense_config - a dictionary with keyword arguments for the hidden dense layers. These arguments will be used by keras.layers.Dense and can include things like activation function, initializer, and regularizer.
+* output_config - a dictionary with keyword arguments for the output layer of the residual block. These arguments will be used by keras.layers.Dense and can include things like activation function, initializer, and regularizer. It is recommended that this layer be linear (i.e. no activation function).
+
 
 ### 4. Process results
 
-Process results with notebook.
+Included is a Jupyter notebook `process_results.ipynb` which gives an example of how you might load the model to do prediction and view some of the results saved in the `results` directory. The `results` directory currently has results created by `Sample_Dense_Expt.py` and `Sample_Conv_Expt.py` for Burgers' equation and the KS equation, respectively. You can run this notebook (assuming you have the data in the `data` directory) as see results similar to the paper.
 
 ## Questions/Comments/Bugs
 
